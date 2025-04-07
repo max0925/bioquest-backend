@@ -10,25 +10,25 @@ import json
 app = FastAPI()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# 跨域支持
+# ✅ 跨域设置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 可换成你的前端地址以增强安全
+    allow_origins=["*"],  # 可替换为你的前端域名
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 环境变量密钥
+# ✅ 获取环境变量中的 API Key
 UNSPLASH_API_KEY = os.getenv("UNSPLASH_ACCESS_KEY")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
-# 首页
+# ✅ 首页测试
 @app.get("/")
 def root():
     return {"message": "BioQuest backend is running on Render"}
 
-# 获取图片
+# ✅ 获取图片接口
 @app.get("/image")
 def get_image(topic: str = Query(...)):
     headers = {"Authorization": f"Client-ID {UNSPLASH_API_KEY}"}
@@ -37,7 +37,7 @@ def get_image(topic: str = Query(...)):
     url = data["results"][0]["urls"]["regular"] if data["results"] else ""
     return JSONResponse({"url": url})
 
-# 获取视频
+# ✅ 获取视频接口
 @app.get("/video")
 def get_video(topic: str = Query(...)):
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={topic}&key={YOUTUBE_API_KEY}&type=video&maxResults=1"
@@ -48,7 +48,7 @@ def get_video(topic: str = Query(...)):
         return JSONResponse({"url": f"https://www.youtube.com/watch?v={video_id}"})
     return JSONResponse({"url": ""})
 
-# AI 聊天接口
+# ✅ 学生端 AI 聊天接口
 class ChatRequest(BaseModel):
     message: str
     history: list
@@ -75,7 +75,35 @@ def chat(request: ChatRequest):
     except Exception as e:
         return JSONResponse({"reply": f"Error: {str(e)}"})
 
-# 生成 Quiz
+# ✅ 教师端 AI 聊天接口
+class TeacherChatRequest(BaseModel):
+    message: str
+    history: list
+
+@app.post("/teacher-chat")
+def teacher_chat(request: TeacherChatRequest):
+    system_prompt = {
+        "role": "system",
+        "content": (
+            "You are an experienced biology curriculum designer. "
+            "Provide formal, structured, and professional responses. "
+            "Use section headings, bullet points, or numbered steps when possible. "
+            "Avoid casual tone and emojis. The goal is to support teachers in designing effective lessons."
+        ),
+    }
+
+    messages = [system_prompt] + request.history + [{"role": "user", "content": request.message}]
+    try:
+        res = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        reply = res.choices[0].message.content
+        return JSONResponse({"reply": reply})
+    except Exception as e:
+        return JSONResponse({"reply": f"Error: {str(e)}"})
+
+# ✅ 生成 Quiz 接口
 @app.post("/quiz")
 async def generate_quiz(request: Request):
     data = await request.json()
@@ -108,3 +136,4 @@ Format the output as a JSON list like this:
         return JSONResponse(content={"questions": questions})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
