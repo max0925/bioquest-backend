@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bioquest-backend
+    runtime: python
+    buildCommand: ""
+    startCommand: uvicorn app:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: UNSPLASH_ACCESS_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
