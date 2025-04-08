@@ -13,10 +13,13 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # ✅ 跨域设置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 可替换为你的前端域名
+    allow_origins=[
+        "http://localhost:3000",  # 如果你在本地跑前端
+        "https://your-project-name.vercel.app"  # ✅ 替换为你真实部署到 Vercel 的前端域名
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 # ✅ 获取环境变量中的 API Key
