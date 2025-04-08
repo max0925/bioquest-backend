@@ -85,18 +85,26 @@ def teacher_chat(request: TeacherChatRequest):
     system_prompt = {
         "role": "system",
         "content": (
-            "You are an experienced biology curriculum designer. "
-            "Provide formal, structured, and professional responses. "
-            "Use section headings, bullet points, or numbered steps when possible. "
-            "Avoid casual tone and emojis. The goal is to support teachers in designing effective lessons."
-        ),
+            "You are a professional biology curriculum designer. "
+            "Your goal is to help teachers create effective, well-organized lesson plans. "
+            "Always format your response clearly using bullet points, numbered sections, or markdown tables. "
+            "If the user's request lacks details such as student grade level, lesson duration, or learning goals, "
+            "generate a basic draft **but also politely ask follow-up questions** to clarify the missing context. "
+            "Avoid casual tone and do not use emojis. "
+            "Use markdown to make content easy to read in HTML rendering (e.g. `**bold**`, tables, headers)."
+        )
     }
 
-    messages = [system_prompt] + request.history + [{"role": "user", "content": request.message}]
+    # 构造完整的聊天历史
+    chat_messages = [system_prompt]
+    for entry in request.history:
+        chat_messages.append({"role": "user" if entry.startswith("user:") else "assistant", "content": entry.split(": ", 1)[-1]})
+    chat_messages.append({"role": "user", "content": request.message})
+
     try:
         res = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=messages
+            messages=chat_messages
         )
         reply = res.choices[0].message.content
         return JSONResponse({"reply": reply})
