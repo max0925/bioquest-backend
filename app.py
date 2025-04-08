@@ -98,21 +98,35 @@ def teacher_chat(request: TeacherChatRequest):
         )
     }
 
-    # 构造完整的聊天历史
-    chat_messages = [system_prompt]
-    for entry in request.history:
-        chat_messages.append({"role": "user" if entry.startswith("user:") else "assistant", "content": entry.split(": ", 1)[-1]})
-    chat_messages.append({"role": "user", "content": request.message})
-
     try:
+        # ✅ 自动裁剪 history，只保留最近 4 条（2轮对话）
+        trimmed_history = request.history[-4:] if len(request.history) > 4 else request.history
+
+        chat_messages = [system_prompt]
+        for entry in trimmed_history:
+            if isinstance(entry, str) and ": " in entry:
+                role, content = entry.split(": ", 1)
+                chat_messages.append({"role": role.strip(), "content": content.strip()})
+
+        # ✅ 添加当前用户请求
+        chat_messages.append({"role": "user", "content": request.message})
+
+        # ✅ 发起 GPT 请求
         res = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=chat_messages
+            messages=chat_messages,
+            temperature=0.7,
         )
+
         reply = res.choices[0].message.content
         return JSONResponse({"reply": reply})
+
     except Exception as e:
-        return JSONResponse({"reply": f"Error: {str(e)}"})
+        print("❌ OpenAI request error:", str(e))  # ✅ 打印到服务器日志
+        return JSONResponse(
+            status_code=500,
+            content={"reply": f"Error occurred in lesson generation: {str(e)}"}
+        )
 
 # ✅ 生成 Quiz 接口
 @app.post("/quiz")
