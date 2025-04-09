@@ -38,7 +38,9 @@ def get_image(topic: str = Query(...)):
     res = requests.get(f"https://api.unsplash.com/search/photos?query={topic}&per_page=1", headers=headers)
     data = res.json()
     url = data["results"][0]["urls"]["regular"] if data["results"] else ""
-    return JSONResponse({"url": url})
+    response = JSONResponse({"url": url})
+    response.headers["Access-Control-Allow-Origin"] = "*"  # 添加允许跨域访问的头部
+    return response
 
 # ✅ 获取视频接口
 @app.get("/video")
