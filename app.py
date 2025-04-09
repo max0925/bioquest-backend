@@ -15,7 +15,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # 如果你在本地跑前端
-        "https://your-project-name.vercel.app"  # ✅ 替换为你真实部署到 Vercel 的前端域名
+        "https://bioquest-ruby.vercel.app"  # ✅ 替换为你真实部署到 Vercel 的前端域名
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
